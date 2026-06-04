@@ -21,7 +21,8 @@
 
 
 (deftest format-message-stays-sanitized
-  (let [exception (ex-info "boom" {:auth-token "secret-token"})
+  (let [exception (ex-info "boom <bad> & worse"
+                    {:auth-token "secret-token"})
         message
         (sentinel/format-message
           {:app-name "demo"
@@ -29,19 +30,23 @@
            :stack-frame-limit 2}
           {:source :http-request
            :request-method :get
-           :uri "/admin/orders"
+           :uri "/admin/orders?view=<all>"
            :support-code "ERR-ABCD1234"
            :exception exception
            :fingerprint "fp-1"
            :timestamp "2026-06-03T10:00:00Z"
-           :extra-lines ["summary=internal-error"]
+           :extra-lines ["summary=<internal>&"]
            :session "cookie=secret"})]
-    (is (.contains message "app=demo"))
-    (is (.contains message "source=http-request"))
-    (is (.contains message "request=GET /admin/orders"))
-    (is (.contains message "support-code=ERR-ABCD1234"))
-    (is (.contains message "summary=internal-error"))
-    (is (.contains message "message=boom"))
+    (is (.contains message "<b>demo</b>"))
+    (is (.contains message "<code>http-request</code>"))
+    (is (.contains message "<b>Exception</b>"))
+    (is (.contains message "boom &lt;bad&gt; &amp; worse"))
+    (is (.contains message "GET /admin/orders?view=&lt;all&gt;"))
+    (is (.contains message "support-code"))
+    (is (.contains message "ERR-ABCD1234"))
+    (is (.contains message "summary=&lt;internal&gt;&amp;"))
+    (is (.contains message "<b>Stack</b>"))
+    (is (.contains message "<pre>at "))
     (is (not (.contains message "secret-token")))
     (is (not (.contains message "cookie=secret")))))
 

@@ -35,6 +35,37 @@
     value))
 
 
+(defn- html-escape
+  "Escapes dynamic values for Telegram HTML messages."
+  [value]
+  (some-> (str value)
+          (str/replace "&" "&amp;")
+          (str/replace "<" "&lt;")
+          (str/replace ">" "&gt;")))
+
+
+(defn- code-line
+  "Formats a single escaped value inside a Telegram code span."
+  [value]
+  (when-let [value (blank->nil value)]
+    (str "<code>" (html-escape value) "</code>")))
+
+
+(defn- labeled-line
+  "Formats a labeled metadata line for Telegram HTML messages."
+  [label value]
+  (when-let [value (blank->nil value)]
+    (str "<code>" label ":</code> " (html-escape value))))
+
+
+(defn- format-section
+  "Formats a titled Telegram HTML section when lines are present."
+  [title lines]
+  (when-let [lines (seq (remove nil? lines))]
+    (str "<b>" title "</b>\n"
+         (str/join "\n" lines))))
+
+
 (defn- require-enabled-value
   "Returns a required enabled setting or throws an ex-info."
   [enabled? field-name value]
@@ -89,7 +120,7 @@
 
 
 (defn format-message
-  "Formats a sanitized plain-text alert message."
+  "Formats a sanitized Telegram HTML alert message."
   [service
    {:keys [exception extra-lines fingerprint request-method source stage
            support-code thread-name timestamp uri worker]}]
@@ -97,31 +128,43 @@
         exception-class (some-> exception class .getName)
         exception-message (or (some-> exception ex-message blank->nil)
                               "<no-message>")
-        lines
-        (concat
-          [(str "app=" (:app-name service))
-           (str "env=" (name (:env service)))
-           (str "source=" (name source))
-           (str "timestamp=" timestamp)
-           (str "fingerprint=" fingerprint)
-           (str "exception=" exception-class)
-           (str "message=" exception-message)]
-          (when worker
-            [(str "worker=" (name worker))])
-          (when stage
-            [(str "stage=" (name stage))])
-          (when thread-name
-            [(str "thread=" thread-name)])
-          (when (and request-method uri)
-            [(str "request=" (-> request-method name str/upper-case)
-                  " "
-                  uri)])
-          (when support-code
-            [(str "support-code=" support-code)])
-          extra-lines
-          ["stack:"]
-          (stack-lines exception stack-frame-limit))]
-    (str/join "\n" lines)))
+        stack-text
+        (->> (stack-lines exception stack-frame-limit)
+             (map html-escape)
+             (str/join "\n"))
+        sections
+        [(str "<b>" (html-escape (:app-name service)) "</b>\n"
+              (str/join " · "
+                        (remove nil?
+                                [(code-line (some-> (:env service) name))
+                                 (code-line (some-> source name))])))
+         (format-section
+           "Exception"
+           [(code-line exception-class)
+            (html-escape exception-message)])
+         (format-section
+           "Request"
+           [(when (and request-method uri)
+              (code-line
+                (str (-> request-method name str/upper-case)
+                     " "
+                     uri)))])
+         (format-section
+           "Context"
+           [(labeled-line "worker" (some-> worker name))
+            (labeled-line "stage" (some-> stage name))
+            (labeled-line "thread" thread-name)
+            (labeled-line "support-code" support-code)])
+         (format-section
+           "Details"
+           (concat
+             [(labeled-line "fingerprint" fingerprint)
+              (labeled-line "timestamp" timestamp)]
+             (map code-line extra-lines)))
+         (format-section
+           "Stack"
+           [(str "<pre>" stack-text "</pre>")])]]
+    (str/join "\n\n" (remove nil? sections))))
 
 
 (defn- expire-fingerprints!

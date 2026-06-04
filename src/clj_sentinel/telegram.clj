@@ -36,14 +36,21 @@
        (str/join "&")))
 
 
+(defn telegram-message-body
+  "Builds an encoded Telegram sendMessage body for HTML alerts."
+  [service text]
+  (form-encode
+    {:chat_id (:chat-id service)
+     :disable_web_page_preview true
+     :parse_mode "HTML"
+     :text text}))
+
+
 (defn send-message!
-  "Sends a plain-text Telegram message and logs on non-2xx failures."
+  "Sends an HTML-formatted Telegram message and logs failures."
   [service text]
   (let [request-body
-        (form-encode
-          {:chat_id (:chat-id service)
-           :disable_web_page_preview true
-           :text text})
+        (telegram-message-body service text)
         request
         (-> (HttpRequest/newBuilder
               (URI/create

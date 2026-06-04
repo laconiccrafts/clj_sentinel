@@ -31,7 +31,7 @@ Add `clj_sentinel` to your project `deps.edn`.
 {:deps
  {laconiccrafts/clj-sentinel
   {:git/url "https://github.com/laconiccrafts/clj_sentinel.git"
-   :git/tag "v0.1.0"}}}
+   :git/tag "v0.1.1"}}}
 ```
 
 If your `deps.edn` already has a `:deps` map, add only the

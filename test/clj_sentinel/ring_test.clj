@@ -33,7 +33,9 @@
     (is (= 500 (:status response)))
     (is (= 1 (count @sent-messages)))
     (is (.contains (first @sent-messages)
-                   "request=GET /orders"))))
+                   "GET /orders"))
+    (is (.contains (first @sent-messages)
+                   "<b>Request</b>"))))
 
 
 (deftest annotated-response-uses-original-exception
@@ -52,9 +54,11 @@
           :uri "/orders"})
     (is (= 1 (count @sent-messages)))
     (is (.contains (first @sent-messages)
-                   "message=boom"))
+                   "boom"))
     (is (.contains (first @sent-messages)
-                   "support-code=ERR-ABCD1234"))))
+                   "ERR-ABCD1234"))
+    (is (.contains (first @sent-messages)
+                   "<b>Context</b>"))))
 
 
 (deftest non-alertable-status-does-not-send

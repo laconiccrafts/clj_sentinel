@@ -28,7 +28,9 @@
           exception))
       (is (= 1 (count @sent-messages)))
       (is (.contains (first @sent-messages)
-                     "source=uncaught-thread"))
+                     "<code>uncaught-thread</code>"))
+      (is (.contains (first @sent-messages)
+                     "<b>Exception</b>"))
       (finally
         (sentinel.jvm/uninstall-uncaught-exception-handler!)
         (Thread/setDefaultUncaughtExceptionHandler previous-handler)))))

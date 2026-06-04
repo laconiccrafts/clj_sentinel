@@ -10,7 +10,7 @@ alert delivery to a specific web framework or logging backend.
 
 - async Telegram delivery through the Bot API
 - process-local alert deduplication by fingerprint
-- sanitized plain-text alert formatting
+- sanitized HTML alert formatting for Telegram
 - generic Ring middleware for `500+` responses and thrown exceptions
 - optional Integrant adapter
 - optional JVM uncaught-exception handler
@@ -23,7 +23,7 @@ Add `clj_sentinel` to your project `deps.edn`.
 {:deps
  {laconiccrafts/clj-sentinel
   {:git/url "https://github.com/laconiccrafts/clj_sentinel.git"
-   :git/tag "v0.1.0"}}}
+   :git/tag "v0.1.1"}}}
 ```
 
 If your `deps.edn` already has a `:deps` map, add only the
